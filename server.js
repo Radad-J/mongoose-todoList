@@ -3,11 +3,13 @@ const mongoose = require('mongoose');
 const path = require('path');
 const Todo = require('./Todo');
 
+let uri = process.env.MONGODB_URI;
+
 const app = express();
 app.use(express.json());
 
 // Connect to MongoDB with error handling
-mongoose.connect('mongodb://localhost:27017/todoapp');
+mongoose.connect(uri);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
