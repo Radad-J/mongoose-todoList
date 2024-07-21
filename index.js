@@ -6,14 +6,15 @@ require('dotenv').config();
 const path = require('path');
 const Todo = require('./Todo');
 
-app.use(cors({
-  origin: 'https://mongoose-todo-list.vercel.app', // Replace with your Vercel app domain
-}));
+
 
 let uri = process.env.MONGODB_URI;
 
 const app = express();
 app.use(express.json());
+app.use(cors({
+  origin: 'https://mongoose-todo-list.vercel.app', // Replace with your Vercel app domain
+}));
 
 // Connect to MongoDB with error handling
 mongoose.connect(uri);
