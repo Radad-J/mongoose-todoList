@@ -1,78 +1,31 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-require('dotenv').config();
-
 const path = require('path');
-const Todo = require('./Todo');
-
-
-
-let uri = process.env.MONGODB_URI;
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+const mongoUri = process.env.MONGO_URI || 'mongodb+srv://admin1:test123@cluster0.5u9zbdn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+
+app.use(cors());
 app.use(express.json());
-app.use(cors({
-  origin: 'https://mongoose-todo-list.vercel.app', // Replace with your Vercel app domain
-}));
 
-// Connect to MongoDB with error handling
-mongoose.connect(uri);
+mongoose.connect(mongoUri)
+.then(() => console.log('Connected to MongoDB Atlas'))
+.catch(err => console.error('Error connecting to MongoDB Atlas', err));
 
+// Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Get all todos with error handling
-app.get('/todos', async (req, res) => {
-  try {
-    const todos = await Todo.find();
-    res.json(todos);
-  } catch (err) {
-    console.error('Error fetching todos:', err);
-    res.status(500).json({ error: 'Failed to fetch todos' });
-  }
+// Import routes
+const todoRoutes = require('./routes/todo');
+app.use('/todos', todoRoutes);
+
+// For single-page applications, serve index.html for all unmatched routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Create a new todo with validation and error handling
-app.post('/todos', async (req, res) => {
-  const { text } = req.body;
-
-  // Validate input
-  if (!text || typeof text !== 'string' || text.trim() === '') {
-    return res.status(400).json({ error: 'Invalid input: text must be a non-empty string' });
-  }
-
-  try {
-    const todo = new Todo({
-      text
-    });
-    await todo.save();
-    res.status(201).json(todo); // Created status
-  } catch (err) {
-    console.error('Error saving todo:', err);
-    res.status(500).json({ error: 'Failed to create todo' });
-  }
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
-
-// Delete a todo by ID with error handling
-app.delete('/todos/:id', async (req, res) => {
-  try {
-    const result = await Todo.findByIdAndDelete(req.params.id);
-
-    if (!result) {
-      return res.status(404).json({ error: 'Todo not found' });
-    }
-
-    res.sendStatus(204); // No content status
-  } catch (err) {
-    console.error('Error deleting todo:', err);
-    res.status(500).json({ error: 'Failed to delete todo' });
-  }
-});
-
-// Global error handler for any unhandled errors
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Something went wrong' });
-});
-
-app.listen(3000, () => console.log('Server started on http://localhost:3000'));
